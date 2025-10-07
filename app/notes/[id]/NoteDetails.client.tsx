@@ -1,61 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-  HydrationBoundary,
-  DehydratedState,
-} from "@tanstack/react-query";
-import { fetchNoteById } from "../../../lib/api";
-import type { Note } from "../../../types/note";
+import { useParams } from "next/navigation";
 import css from "./NoteDetails.module.css";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNoteById } from "@/lib/api";
 
-interface NoteDetailsClientProps {
-  id: string;
-  dehydratedState?: DehydratedState | null;
-}
+import ErrorMessage from "@/components/ErrorMessage/ErrorMessage";
+import Loading from "@/app/loading";
 
-const NoteDetailsInner = ({ id }: { id: string }) => {
-  const {
-    data: note,
-    isLoading,
-    error,
-  } = useQuery<Note, Error>({
+export default function NoteDetailsClient() {
+  const { id } = useParams<{ id: string }>();
+
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
-    enabled: !!id && id !== "undefined",
     refetchOnMount: false,
   });
 
-  if (!id || id === "undefined") return <p>Invalid note ID</p>;
-  if (isLoading) return <p>Loading, please wait...</p>;
-  if (error || !note) return <p>Something went wrong.</p>;
+  const formatDate = (isoDate: string) => {
+    return new Date(isoDate).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (isLoading) return <Loading />;
+
+  if (isError || !data) return <ErrorMessage />;
 
   return (
-    <div className={css.container}>
-      <div className={css.item}>
-        <div className={css.header}>
-          <h2>{note.title}</h2>
-        </div>
-        <p className={css.content}>{note.content}</p>
-        <p className={css.date}>{note.createdAt}</p>
+    <>
+      <div className={css.container}>
+        {data && (
+          <div className={css.item}>
+            <div className={css.header}>
+              <h2>{data.title}</h2>
+            </div>
+            <p className={css.content}>{data.content}</p>
+            <p className={css.date}>{formatDate(data.createdAt)}</p>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
-};
-
-const NoteDetailsClient = ({ id, dehydratedState }: NoteDetailsClientProps) => {
-  const [queryClient] = useState(() => new QueryClient());
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <HydrationBoundary state={dehydratedState ?? undefined}>
-        <NoteDetailsInner id={id} />
-      </HydrationBoundary>
-    </QueryClientProvider>
-  );
-};
-
-export default NoteDetailsClient;
+}

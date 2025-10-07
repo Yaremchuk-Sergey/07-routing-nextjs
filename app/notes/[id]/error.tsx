@@ -4,8 +4,6 @@ interface ErrorProps {
   error: Error;
 }
 
-const NoteDetailsError = ({ error }: ErrorProps) => {
-  return <p>Could not fetch note details. {error.message}</p>;
-};
-
-export default NoteDetailsError;
+export default function Error({ error }: ErrorProps) {
+  return <p>Could not fetch the list of notes. {error.message}</p>;
+}

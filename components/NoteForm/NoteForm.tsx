@@ -1,60 +1,53 @@
-"use client";
-
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createNote } from "../../lib/api";
+import { ErrorMessage, Field, Form, Formik } from "formik";
+import * as Yup from "yup";
+import { createNote } from "@/lib/api";
 import css from "./NoteForm.module.css";
-import { NoteFormValues } from "@/types/noteForm";
 
 interface NoteFormProps {
-  onClose: () => void;
+  onCancel: () => void;
 }
 
-const NoteFormSchema = Yup.object().shape({
+const validationSchema = Yup.object({
   title: Yup.string()
-    .min(3, "Title must be at least 3 characters")
-    .max(50, "Title cannot exceed 50 characters")
-    .required("Title is required!"),
-  content: Yup.string().max(500, "Content cannot exceed 500 characters"),
+    .min(3, "Мінімум 3 символи")
+    .max(50, "Максимум 50 символів")
+    .required("Обов'язкове поле"),
+  content: Yup.string().max(500, "Максимум 500 символів"),
   tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
-    .required("Tag is required!"),
+    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"], "Невірний тег")
+    .required("Обов'язкове поле"),
 });
 
-const NoteForm = ({ onClose }: NoteFormProps) => {
+export default function NoteForm({ onCancel }: NoteFormProps) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (values: NoteFormValues) => createNote(values),
+    mutationFn: (values: { title: string; content: string; tag: string }) =>
+      createNote(values),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onClose();
-    },
-    onError: (error: Error) => {
-      console.error(error.message);
+      onCancel();
     },
   });
 
-  const initialValues: NoteFormValues = {
-    title: "",
-    content: "",
-    tag: "Todo",
-  };
-
   return (
     <Formik
-      initialValues={initialValues}
-      validationSchema={NoteFormSchema}
-      onSubmit={(values) => mutation.mutate(values)}
+      initialValues={{ title: "", content: "", tag: "" }}
+      validationSchema={validationSchema}
+      onSubmit={(values, { resetForm }) => {
+        mutation.mutate(values);
+        resetForm();
+      }}
     >
-      {({ isSubmitting }) => (
+      {({ isSubmitting, isValid }) => (
         <Form className={css.form}>
           <div className={css.formGroup}>
             <label htmlFor="title">Title</label>
             <Field
               id="title"
               name="title"
+              type="text"
               className={css.input}
             />
             <ErrorMessage
@@ -88,6 +81,7 @@ const NoteForm = ({ onClose }: NoteFormProps) => {
               name="tag"
               className={css.select}
             >
+              <option value="">Select tag</option>
               <option value="Todo">Todo</option>
               <option value="Work">Work</option>
               <option value="Personal">Personal</option>
@@ -105,15 +99,14 @@ const NoteForm = ({ onClose }: NoteFormProps) => {
             <button
               type="button"
               className={css.cancelButton}
-              onClick={onClose}
-              disabled={isSubmitting}
+              onClick={onCancel}
             >
               Cancel
             </button>
             <button
               type="submit"
               className={css.submitButton}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isValid}
             >
               Create note
             </button>
@@ -122,6 +115,4 @@ const NoteForm = ({ onClose }: NoteFormProps) => {
       )}
     </Formik>
   );
-};
-
-export default NoteForm;
+}

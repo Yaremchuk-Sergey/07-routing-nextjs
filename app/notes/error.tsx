@@ -1,16 +1,9 @@
 "use client";
 
-import React from "react";
-
-interface NotesErrorProps {
+interface ErrorProps {
   error: Error;
 }
 
-export default function NotesError({ error }: NotesErrorProps) {
-  return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Could not fetch the list of notes.</h1>
-      <p>{error.message}</p>
-    </div>
-  );
+export default function Error({ error }: ErrorProps) {
+  return <p>Could not fetch the list of notes. {error.message}</p>;
 }

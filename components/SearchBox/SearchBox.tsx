@@ -1,3 +1,5 @@
+"use client";
+
 import type { ChangeEvent } from "react";
 import css from "./SearchBox.module.css";
 
@@ -18,6 +20,9 @@ const SearchBox = ({ value, onChange }: SearchBoxProps) => {
       placeholder="Search notes"
       value={value}
       onChange={handleChange}
+      id="search-notes"
+      name="search-notes"
+      autoComplete="off"
     />
   );
 };
